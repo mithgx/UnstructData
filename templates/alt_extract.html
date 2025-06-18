@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Model 2</title>
+        <style> 
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+                padding: 6px;
+            }
+            body {
+                font-family: Arial, sans-serif;
+            }
+            h2 {
+                color: #333;
+            }
+            form {
+                margin-bottom: 20px;
+            }
+        </style>
+    </head>
+
+<body>
+    <h2>Alternative Table Extraction (e.g., Camelot)</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="pdf_file" accept=".pdf" required>
+        <button type="submit">Try Alternate Extract</button>
+    </form>
+
+    {% if tables %}
+        <h3>Extracted Tables (Alternative Method):</h3>
+        {% for table in tables %}
+            <table style="margin-bottom: 20px;">
+                {% for row in table %}
+                    <tr>
+                        {% for cell in row %}
+                            <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    {% endif %}
+</body>
+</html>

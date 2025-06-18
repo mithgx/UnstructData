@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Table Extractor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        select, input[type="file"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #101995;
+            box-shadow: 0 0 0 2px rgba(16,25,149,0.1);
+        }
+        .page-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .page-range input {
+            width: 100px;
+        }
+        button {
+            background-color: #101995;
+            color: white;
+            padding: 10px 20px; 
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #6245a0;
+        }
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .table-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 20px 0 10px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px 4px 0 0;
+        }
+        .page-info {
+            color: #666;
+            font-size: 0.9em;
+            padding: 4px 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+        .model-info {
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        .model-description {
+            display: none;
+            margin-top: 8px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        select#model:hover + .model-description {
+            display: block;
+        }
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> Table Extractor</h1>
+        <form method="post" action="/process" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="pdf_file">Select PDF File:</label>
+                <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+            </div>
+            <div class="form-group">
+                <label for="model">Select Extraction Model:</label>
+                <select id="model" name="model" required>
+                    <option value="pdfplumber">PDFPlumber (Structured)</option>
+                    <option value="camelot">Camelot (Structured)</option>
+                    <option value="tabula">Tabula (Structured)</option>
+                    <option value="pdf2xml">PDF2XML (Legacy PDFs)</option>
+                   
+                    <option value="pypdf2">PyPDF2 (Okayish)</option>
+                    
+                    <option value="pymupdf">PyMuPDF (Fast extraction)</option>
+                    <option value="unstructured">Unstructured (Unstructured)</option>
+                    <option value="cascade_tabnet">CascadeTabNet (DL)</option>
+
+                    <option value="table_transformer_advanced">Table Transformer (DL)</option>
+                    
+                </select>
+                <div class="model-description" id="modelDescription">
+                    <strong>Table Transformer (Advanced):</strong> Combines Microsoft's detection and structure models for the most robust table extraction, including complex, borderless, and irregular tables.
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Page Range (optional):</label>
+                <div class="page-range">
+                    <input type="number" name="start_page" placeholder="Start Page" min="1">
+                    <span>to</span>
+                    <input type="number" name="end_page" placeholder="End Page" min="1">
+                </div>
+            </div>
+            <button type="submit">Extract Tables</button>
+        </form>
+
+        {% if tables %}
+            {% for title, data, pages in tables %}
+                <div class="table-container">
+                    <div class="table-title">
+                        {{ title }}
+                        <span class="page-info">
+                            {% if pages|length > 1 %}
+                                Pages {{ pages|join(', ') }}
+                            {% else %}
+                                Page {{ pages[0] }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <table>
+                        {% if data %}
+                            {% for row in data %}
+                                {% if loop.index == 1 %}
+                                <tr>
+                                    {% for cell in row %}
+                                        <th>{{ cell }}</th>
+                                    {% endfor %}
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    {% for cell in row %}
+                                        <td>{{ cell }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <tr><td>No data found in table</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if tables and tables[0][0].startswith('Error') %}
+            <div class="error-message">
+                {{ tables[0][1][0][0] }}
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Dynamic model descriptions
+        const modelDescriptions = {
+            'table_transformer_advanced': 'Combines Microsoft\'s detection and structure models for the most robust table extraction, including complex, borderless, and irregular tables.',
+            'unstructured': 'Advanced table detection for both structured and unstructured tables. Best for complex documents.',
+            'pypdf2': 'Fast and reliable text extraction with layout preservation. Good for text-heavy documents and simple layouts.',
+            'pdfplumber': 'Structured ',
+            'camelot': 'Structured',
+            'tabula': 'Structured',
+            'pymupdf': 'Fast extraction engine, good for modern PDFs with clear layout.',
+            'pdf2xml': 'Structured',
+            'cascade_tabnet': 'DL-Based'
+        };
+
+        document.getElementById('model').addEventListener('change', function() {
+            const description = modelDescriptions[this.value] || '';
+            document.getElementById('modelDescription').innerHTML = `<strong>${this.value}:</strong> ${description}`;
+        });
+    </script>
+</body>
+</html>
